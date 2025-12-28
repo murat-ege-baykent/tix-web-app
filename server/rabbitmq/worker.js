@@ -23,20 +23,23 @@ mongoose.connect(process.env.MONGO_URI)
 
 // --- EMAIL SETUP ---
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com", // 1. Use explicit host
-  port: 587,              // 2. Use Port 587 (Standard TLS) instead of 465 (SSL)
-  secure: false,          // 3. Must be false for port 587
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Must be false for port 587
+  requireTLS: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    // This helps prevent errors if the cloud server has certificate issues
     rejectUnauthorized: false
   },
-  // Increase connection timeout to 20 seconds (default is too short for some free tiers)
-  connectionTimeout: 20000, 
-  greetingTimeout: 20000 
+  // ⚡ FORCE IPv4 to avoid timeout issues
+  family: 4, 
+  // ⚡ Debugging logs to see exactly where it fails
+  logger: true,
+  debug: true,
+  connectionTimeout: 10000 // 10 seconds
 });
 
 // Helper function to send email with QR Image
