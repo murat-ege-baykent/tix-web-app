@@ -39,7 +39,7 @@ const AttendeeDashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/api/events", {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/events`, {
           params: { ...filters, page, limit: 6 }
         });
         
@@ -94,7 +94,7 @@ const AttendeeDashboard = () => {
 
     try {
       // Call Backend (Producer -> RabbitMQ)
-      const res = await axios.post("http://localhost:3000/api/tickets/purchase", 
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/tickets/purchase`, 
         { eventId, quantity },
         { headers: { token: `Bearer ${user.accessToken}` } }
       );

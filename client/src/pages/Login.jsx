@@ -23,7 +23,7 @@ const Login = () => {
     e.preventDefault();
     dispatch({ type: "LOGIN_START" });
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/login", credentials);
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/login`, credentials);
       dispatch({ type: "LOGIN_SUCCESS", payload: res.data });
       navigate("/");
     } catch (err) {
@@ -38,7 +38,7 @@ const Login = () => {
         console.log("Google Token received:", credentialResponse.credential);
         
         // Send Google Token to your Backend
-        const res = await axios.post("http://localhost:3000/api/auth/google", {
+        const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/google`, {
             token: credentialResponse.credential
         });
 

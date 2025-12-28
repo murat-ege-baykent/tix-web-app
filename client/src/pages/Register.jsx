@@ -22,7 +22,7 @@ const Register = () => {
     e.preventDefault();
     try {
       // NOTE: Make sure this URL matches your backend port (3000)
-      await axios.post("http://localhost:3000/api/auth/register", info);
+      await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, info);
       alert("Account created successfully!");
       navigate("/login");
     } catch (err) {

@@ -28,7 +28,7 @@ const OrganizerScanner = () => {
   const verifyTicket = async (code) => {
     setStatus("loading");
     try {
-      const res = await axios.post("http://localhost:3000/api/tickets/verify", 
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/tickets/verify`, 
         { qrCode: code },
         { headers: { token: `Bearer ${user.accessToken}` } }
       );

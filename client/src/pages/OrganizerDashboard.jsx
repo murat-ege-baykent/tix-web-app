@@ -24,7 +24,7 @@ const OrganizerDashboard = () => {
     const fetchEvents = async () => {
       try {
         // Fetch all events (high limit) and filter client-side for this organizer
-        const res = await axios.get("http://localhost:3000/api/events?limit=100");
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/events?limit=100`);
         const allEvents = res.data.events || []; 
         
         // Filter: Keep only events created by THIS user
@@ -55,7 +55,7 @@ const OrganizerDashboard = () => {
         organizerId: user._id // Explicitly send ID if backend needs it
       };
 
-      const res = await axios.post("http://localhost:3000/api/events", eventPayload, {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/events`, eventPayload, {
         headers: { token: `Bearer ${user.accessToken}` }
       });
 
@@ -74,7 +74,7 @@ const OrganizerDashboard = () => {
   const handleDelete = async (id) => {
     if(!window.confirm("Delete this event?")) return;
     try {
-      await axios.delete(`http://localhost:3000/api/events/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/events/${id}`, {
         headers: { token: `Bearer ${user.accessToken}` }
       });
       setMyEvents(myEvents.filter(event => event._id !== id));

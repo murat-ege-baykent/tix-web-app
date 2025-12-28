@@ -16,7 +16,7 @@ const MyTickets = () => {
       console.log("🔹 FRONTEND: Fetching tickets for user:", user?.username);
 
       try {
-        const res = await axios.get("http://localhost:3000/api/tickets", {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/tickets`, {
           headers: { token: `Bearer ${user.accessToken}` },
         });
 

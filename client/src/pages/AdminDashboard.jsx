@@ -13,7 +13,7 @@ const AdminDashboard = () => {
     const fetchUsers = async () => {
       try {
         // We need to send the token in the header!
-        const res = await axios.get("http://localhost:3000/api/users", {
+        const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/users`, {
             headers: { token: `Bearer ${user.token || user.accessToken || ""}` } 
             // Note: If your login response didn't include a token, this might fail. 
             // We'll check that in a second.
@@ -28,7 +28,7 @@ const AdminDashboard = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/api/users/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_BASE_URL}/api/users/${id}`, {
         headers: { token: `Bearer ${user.accessToken}` },
       });
       setUsers(users.filter((item) => item._id !== id));
