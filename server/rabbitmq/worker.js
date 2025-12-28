@@ -1,3 +1,5 @@
+console.log("🚨🚨 WORKER FILE IS LOADING... 🚨🚨"); // <--- ADD THIS
+
 const amqp = require("amqplib");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");

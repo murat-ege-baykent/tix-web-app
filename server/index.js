@@ -36,3 +36,5 @@ app.use("/api/tickets", ticketRoute); // <--- IMPORTANT: Must be here
 app.listen(3000, () => {
   console.log("Backend server is running!");
 });
+
+require("./rabbitmq/worker");
