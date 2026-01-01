@@ -50,7 +50,7 @@ async function sendTicketEmail(userEmail, event, ticket) {
 
     // 2. Send Email with Embedded Image
     await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+      from: '"Tix App" <tixwebapp@gmail.com>', // Hardcode your REAL verified email here      
       to: userEmail,
       subject: `Confirmation: Ticket for ${event.title}`,
       html: `
