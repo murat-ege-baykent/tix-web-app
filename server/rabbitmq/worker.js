@@ -21,20 +21,19 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Worker connected to DB"))
   .catch((err) => console.error("DB Connection Error:", err));
 
-// --- EMAIL SETUP ---
+// --- EMAIL SETUP (BREVO) ---
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,              // <--- SWITCH TO PORT 465 (SSL)
-  secure: true,           // <--- MUST BE TRUE FOR PORT 465
+  host: "smtp-relay.brevo.com", // <--- MUST MATCH BREVO SERVER
+  port: 587,                    // Brevo standard port
+  secure: false, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false // Helps with cloud SSL certificates
+    rejectUnauthorized: false
   },
-  family: 4,              // <--- KEEP THIS (Forces IPv4)
-  logger: true,           // Keep logging to debug
+  logger: true,
   debug: true
 });
 
