@@ -22,6 +22,11 @@ const OrganizerScanner = () => {
 
   const handleError = (err) => {
     console.error(err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      alert("❌ Camera access denied. Please enable camera permissions in your browser settings to use the scanner.");
+    } else {
+      alert("❌ Camera error: " + err.message);
+    }
   };
 
   // Call Backend to Verify
@@ -85,6 +90,7 @@ const OrganizerScanner = () => {
               delay={300}
               onError={handleError}
               onScan={handleScan}
+              constraints={{ video: { facingMode: "environment" } }}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           </div>
