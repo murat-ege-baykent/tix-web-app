@@ -21,18 +21,23 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("Worker connected to DB"))
   .catch((err) => console.error("DB Connection Error:", err));
 
-// --- EMAIL SETUP (BREVO) ---
+// --- EMAIL SETUP (Using Brevo on Port 2525) ---
+console.log("📧 Worker attempting to connect via PORT 2525..."); // <--- This log confirms the update
+
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com", // <--- MUST MATCH BREVO SERVER
-  port: 587,                    // Brevo standard port
-  secure: false, 
+  host: "smtp-relay.brevo.com",
+  port: 2525,               // <--- THE KEY FIX: Port 2525 bypasses the firewall
+  secure: false,            // Must be false for 2525
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
   tls: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false, // Helps avoid SSL handshake errors
+    ciphers: "SSLv3"           // Compatibility mode
   },
+  connectionTimeout: 10000,    // 10 seconds timeout
+  greetingTimeout: 10000,
   logger: true,
   debug: true
 });
