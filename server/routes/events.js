@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const Event = require("../models/Event");
+const { verifyToken } = require("../middleware/verifyToken"); // ✅ FIX: Added this import
 const { verifyTokenAndOrganizer } = require("../middleware/verifyToken");
 
 // CREATE EVENT (Only Organizers)
