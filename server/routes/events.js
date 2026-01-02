@@ -4,7 +4,6 @@ const Ticket = require("../models/Ticket");
 const User = require("../models/User");     
 const { verifyToken, verifyTokenAndOrganizer } = require("../middleware/verifyToken");
 const amqp = require("amqplib");
-const Waitlist = require("../models/Waitlist");
 
 // --- NEW: GET EVENT ANALYTICS ---
 router.get("/:id/analytics", verifyTokenAndOrganizer, async (req, res) => {
@@ -174,26 +173,6 @@ router.put("/:id", verifyToken, async (req, res) => {
     res.status(200).json(updatedEvent);
   } catch (err) {
     console.error(err);
-    res.status(500).json(err);
-  }
-});
-
-// JOIN WAITLIST
-router.post("/:id/waitlist", verifyToken, async (req, res) => {
-  try {
-    const alreadyWaiting = await Waitlist.findOne({ eventId: req.params.id, userId: req.user.id });
-    if (alreadyWaiting) return res.status(400).json("You are already on the waitlist.");
-
-    const user = await User.findById(req.user.id);
-    const newEntry = new Waitlist({
-      eventId: req.params.id,
-      userId: req.user.id,
-      userEmail: user.email
-    });
-
-    await newEntry.save();
-    res.status(200).json("Added to waitlist! We will email you if space opens up.");
-  } catch (err) {
     res.status(500).json(err);
   }
 });
