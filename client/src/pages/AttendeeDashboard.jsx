@@ -34,7 +34,7 @@ const AttendeeDashboard = () => {
 
   const [events, setEvents] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null); 
-  const [loading, setLoading] = useState(true); // Track loading state
+  const [loading, setLoading] = useState(true); 
   
   const [filters, setFilters] = useState({ search: "", location: "", date: "" });
   const [page, setPage] = useState(1);
@@ -52,7 +52,7 @@ const AttendeeDashboard = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
-      setLoading(true); // Start animation
+      setLoading(true);
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/events`, {
           params: { ...filters, page, limit: 6 }
@@ -66,7 +66,7 @@ const AttendeeDashboard = () => {
       } catch (err) { 
         console.error("Error fetching events:", err); 
       } finally {
-        setLoading(false); // End animation
+        setLoading(false);
       }
     };
     fetchEvents();
@@ -82,10 +82,15 @@ const AttendeeDashboard = () => {
     navigate("/login");
   };
 
+  // ✅ FIX: Restoration of missing handleLogin function
+  const handleLogin = () => {
+    navigate("/login");
+  };
+
   const handlePurchase = async (eventId) => {
     if (!user) {
       alert("Please Login to Purchase Tickets");
-      navigate("/login");
+      handleLogin();
       return;
     }
     const qtyInput = prompt("How many tickets would you like to buy? (Max 5)", "1");
@@ -120,7 +125,7 @@ const AttendeeDashboard = () => {
               <span style={{ fontWeight: "bold" }}>Hello, {user.username}</span>
               <a href="/my-tickets" style={{ color: "#0071c2", fontWeight: "bold", textDecoration: "none" }}>My Tickets</a>
               {user.role === 'admin' && <a href="/admin" style={{color:"red", textDecoration:"none", fontWeight:"bold"}}>Admin</a>}
-              {(user.role === 'organizer' || user.role === 'admin') && <a href="/organizer" style={{color:"blue", textDecoration:"none", fontWeight:"bold"}}>Organizer</a>}
+              {(user.role === 'organizer' || user.role === 'admin') && <a href="/organizer" style={{color:"blue", textDecoration:"none", fontWeight:"bold"}}>Organizer Dashboard</a>}
               <button onClick={handleLogout} style={{ padding: "8px 15px", background: "#d9534f", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>Logout</button>
             </>
           ) : (
@@ -139,7 +144,6 @@ const AttendeeDashboard = () => {
       {/* --- EVENTS GRID --- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
         {loading ? (
-          // Show 6 Skeletons while loading
           Array(6).fill(0).map((_, i) => <EventSkeleton key={i} />)
         ) : events.length === 0 ? (
           <div style={{ gridColumn: "1/-1", textAlign: "center", marginTop: "50px", color: "gray" }}><h3>No events found.</h3></div>
