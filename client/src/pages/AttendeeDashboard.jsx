@@ -116,13 +116,13 @@ const AttendeeDashboard = () => {
       {/* --- HEADER --- */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
         <div>
-          <h1 style={{ color: "#003580", margin: 0 }}>Tix Events</h1>
+          <h1 style={{ color: "#003580", margin: 0 }}>Events</h1>
           <p style={{ margin: "5px 0", color: "#555" }}>Discover your next experience.</p>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:"15px" }}>
           {user ? (
             <>
-              <span style={{ fontWeight: "bold" }}>Hello, {user.username}</span>
+              <span style={{ fontWeight: "bold" }}>Hello,  {user.username}</span>
               <a href="/my-tickets" style={{ color: "#0071c2", fontWeight: "bold", textDecoration: "none" }}>My Tickets</a>
               {user.role === 'admin' && <a href="/admin" style={{color:"red", textDecoration:"none", fontWeight:"bold"}}>Admin</a>}
               {(user.role === 'organizer' || user.role === 'admin') && <a href="/organizer" style={{color:"blue", textDecoration:"none", fontWeight:"bold"}}>Organizer Dashboard</a>}

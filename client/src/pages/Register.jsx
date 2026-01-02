@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import "./Login.css"; // We reuse the styles from Login
+import "./Login.css"; 
 
 const Register = () => {
   const [info, setInfo] = useState({
@@ -9,7 +9,7 @@ const Register = () => {
     email: "",
     password: "",
     fullName: "",
-    role: "attendee" // Default role
+    role: "attendee" // ✅ ROLE IS NOW HARDCODED TO ATTENDEE
   });
 
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ const Register = () => {
   const handleClick = async (e) => {
     e.preventDefault();
     try {
-      // NOTE: Make sure this URL matches your backend port (3000)
+      // NOTE: Ensure VITE_API_BASE_URL is set in your .env file
       await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, info);
       alert("Account created successfully!");
       navigate("/login");
@@ -35,12 +35,16 @@ const Register = () => {
     <div className="loginContainer">
       <div className="loginWrapper">
         <h2>Register for Tix</h2>
+        <p style={{fontSize: "14px", color: "gray", textAlign: "center", marginBottom: "20px"}}>
+          Create an account to discover and buy concert tickets.
+        </p>
         
         <input 
           id="username" 
           onChange={handleChange} 
           className="lInput" 
           placeholder="Username" 
+          required
         />
         
         <input 
@@ -48,6 +52,7 @@ const Register = () => {
           onChange={handleChange} 
           className="lInput" 
           placeholder="Email" 
+          required
         />
         
         <input 
@@ -55,6 +60,7 @@ const Register = () => {
           onChange={handleChange} 
           className="lInput" 
           placeholder="Full Name (Ad Soyad)" 
+          required
         />
 
         <input 
@@ -63,14 +69,10 @@ const Register = () => {
           onChange={handleChange} 
           className="lInput" 
           placeholder="Password" 
+          required
         />
         
-        <label style={{fontSize: "12px", color: "gray", marginBottom: "-10px"}}>Select Role:</label>
-        <select id="role" onChange={handleChange} className="lInput">
-            <option value="attendee">Attendee (Buy Tickets)</option>
-            <option value="organizer">Organizer (Create Events)</option>
-            <option value="admin">Admin</option>
-        </select>
+        {/* ❌ ROLE SELECTION REMOVED FOR SECURITY */}
 
         <button onClick={handleClick} className="lButton">Register</button>
         

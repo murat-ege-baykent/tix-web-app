@@ -59,7 +59,7 @@ const Login = () => {
   return (
     <div className="loginContainer">
       <div className="loginWrapper">
-        <h2>Tix Login</h2>
+        <h2>Login</h2>
         
         {/* Standard Form */}
         <input
