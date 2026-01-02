@@ -4,6 +4,7 @@ const Ticket = require("../models/Ticket");
 const User = require("../models/User");     
 const { verifyToken, verifyTokenAndOrganizer } = require("../middleware/verifyToken");
 const amqp = require("amqplib");
+const Waitlist = require("../models/Waitlist");
 
 // --- NEW: GET EVENT ANALYTICS ---
 router.get("/:id/analytics", verifyTokenAndOrganizer, async (req, res) => {
@@ -114,37 +115,85 @@ router.delete("/:id", verifyTokenAndOrganizer, async (req, res) => {
   }
 });
 
-// UPDATE EVENT & NOTIFY OWNERS
+// UPDATE EVENT & NOTIFY OWNERS + WAITLIST
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     if (req.user.role !== "organizer" && req.user.role !== "admin") {
       return res.status(403).json("Only organizers can edit events.");
     }
+
+    const oldEvent = await Event.findById(req.params.id);
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
       { new: true }
     );
+
     if (!updatedEvent) return res.status(404).json("Event not found.");
+
+    // --- 1. NOTIFY CURRENT TICKET HOLDERS ---
     const tickets = await Ticket.find({ eventId: req.params.id });
     const userIds = [...new Set(tickets.map((t) => t.userId))];
     const users = await User.find({ _id: { $in: userIds } });
     const emailList = users.map((u) => u.email).filter((email) => email);
+
+    const connection = await amqp.connect(process.env.RABBIT_URL);
+    const channel = await connection.createChannel();
+    await channel.assertQueue("event_updates", { durable: true });
+
     if (emailList.length > 0) {
-      const connection = await amqp.connect(process.env.RABBIT_URL);
-      const channel = await connection.createChannel();
-      await channel.assertQueue("event_updates", { durable: true });
       const notificationData = {
         eventTitle: updatedEvent.title,
         newDate: new Date(updatedEvent.date).toLocaleDateString(),
         newLocation: updatedEvent.location,
         emails: emailList,
+        isWaitlistAlert: false
       };
       channel.sendToQueue("event_updates", Buffer.from(JSON.stringify(notificationData)), { persistent: true });
     }
+
+    // --- 2. WAITLIST LOGIC: If capacity increased, notify waitlist ---
+    if (updatedEvent.capacity > oldEvent.capacity) {
+      const waitingUsers = await Waitlist.find({ eventId: req.params.id });
+      const waitlistEmails = waitingUsers.map(u => u.userEmail);
+
+      if (waitlistEmails.length > 0) {
+        channel.sendToQueue("event_updates", Buffer.from(JSON.stringify({
+          eventTitle: updatedEvent.title,
+          newDate: new Date(updatedEvent.date).toLocaleDateString(),
+          newLocation: updatedEvent.location,
+          emails: waitlistEmails,
+          isWaitlistAlert: true 
+        })));
+        
+        await Waitlist.deleteMany({ eventId: req.params.id });
+        console.log(`Waitlist notified for ${updatedEvent.title}`);
+      }
+    }
+
     res.status(200).json(updatedEvent);
   } catch (err) {
     console.error(err);
+    res.status(500).json(err);
+  }
+});
+
+// JOIN WAITLIST
+router.post("/:id/waitlist", verifyToken, async (req, res) => {
+  try {
+    const alreadyWaiting = await Waitlist.findOne({ eventId: req.params.id, userId: req.user.id });
+    if (alreadyWaiting) return res.status(400).json("You are already on the waitlist.");
+
+    const user = await User.findById(req.user.id);
+    const newEntry = new Waitlist({
+      eventId: req.params.id,
+      userId: req.user.id,
+      userEmail: user.email
+    });
+
+    await newEntry.save();
+    res.status(200).json("Added to waitlist! We will email you if space opens up.");
+  } catch (err) {
     res.status(500).json(err);
   }
 });

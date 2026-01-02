@@ -74,6 +74,24 @@ const AttendeeDashboard = () => {
     navigate("/login");
   };
 
+  // --- NEW: JOIN WAITLIST LOGIC ---
+  const handleJoinWaitlist = async (eventId) => {
+    if (!user) {
+      alert("Please Login to Join the Waitlist");
+      navigate("/login");
+      return;
+    }
+    try {
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/events/${eventId}/waitlist`, 
+        {}, 
+        { headers: { token: `Bearer ${user.accessToken}` } }
+      );
+      alert(res.data); // Shows "Added to waitlist!..."
+    } catch (err) {
+      alert(err.response?.data || "Failed to join waitlist.");
+    }
+  };
+
   // --- PURCHASE LOGIC (Rule 2: Quantity & Rule 3: RabbitMQ) ---
   const handlePurchase = async (eventId) => {
     if (!user) {
@@ -156,13 +174,27 @@ const AttendeeDashboard = () => {
                   <p style={{margin:"5px 0"}}>📅 <strong>{new Date(event.date).toLocaleDateString()}</strong></p>
                   <p style={{margin:"5px 0"}}>📍 {event.location}</p>
                   <p style={{margin:"5px 0", color:"green", fontWeight:"bold"}}>💵 ${event.price}</p>
+                  <p style={{margin:"5px 0", fontSize: "12px", color: event.sold >= event.capacity ? "red" : "#555"}}>
+                    {event.sold >= event.capacity ? "🔴 SOLD OUT" : `🎟 ${event.capacity - event.sold} tickets left`}
+                  </p>
                 </div>
-                <button 
-                  onClick={() => handlePurchase(event._id)}
-                  style={{ width: "100%", marginTop: "15px", padding: "10px", background: "#0071c2", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontSize: "16px", fontWeight:"bold" }}
-                >
-                  Buy Ticket
-                </button>
+
+                {/* --- BUTTON LOGIC: Purchase vs Waitlist --- */}
+                {event.sold >= event.capacity ? (
+                  <button 
+                    onClick={() => handleJoinWaitlist(event._id)}
+                    style={{ width: "100%", marginTop: "15px", padding: "10px", background: "#ffc107", color: "#000", border: "none", borderRadius: "5px", cursor: "pointer", fontSize: "16px", fontWeight:"bold" }}
+                  >
+                    Join Waitlist
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => handlePurchase(event._id)}
+                    style={{ width: "100%", marginTop: "15px", padding: "10px", background: "#0071c2", color: "white", border: "none", borderRadius: "5px", cursor: "pointer", fontSize: "16px", fontWeight:"bold" }}
+                  >
+                    Buy Ticket
+                  </button>
+                )}
               </div>
             </div>
           ))}
