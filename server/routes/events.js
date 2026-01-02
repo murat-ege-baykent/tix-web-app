@@ -1,14 +1,42 @@
 const router = require("express").Router();
 const Event = require("../models/Event");
-const Ticket = require("../models/Ticket"); // ✅ ADDED: Required for PUT route
-const User = require("../models/User");     // ✅ ADDED: Required for PUT route
+const Ticket = require("../models/Ticket"); 
+const User = require("../models/User");     
 const { verifyToken, verifyTokenAndOrganizer } = require("../middleware/verifyToken");
 const amqp = require("amqplib");
 
-// --- GET EVENTS FOR ORGANIZER (FIX: This was missing!) ---
+// --- NEW: GET EVENT ANALYTICS ---
+router.get("/:id/analytics", verifyTokenAndOrganizer, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json("Event not found");
+
+    // Calculate Sales Progress
+    const salesPercentage = ((event.sold / event.capacity) * 100).toFixed(1);
+
+    // Calculate Check-in Progress
+    const totalTickets = await Ticket.find({ eventId: req.params.id });
+    const checkedInCount = totalTickets.filter(t => t.isCheckedIn).length;
+    const checkInPercentage = totalTickets.length > 0 
+      ? ((checkedInCount / totalTickets.length) * 100).toFixed(1) 
+      : 0;
+
+    res.status(200).json({
+      totalSold: event.sold,
+      capacity: event.capacity,
+      salesPercentage,
+      checkedInCount,
+      checkInPercentage,
+      totalAttendees: totalTickets.length
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+// GET EVENTS FOR ORGANIZER
 router.get("/organizer", verifyTokenAndOrganizer, async (req, res) => {
   try {
-    // Find only events created by the logged-in organizer
     const events = await Event.find({ organizerId: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json(events);
   } catch (err) {
@@ -17,13 +45,12 @@ router.get("/organizer", verifyTokenAndOrganizer, async (req, res) => {
   }
 });
 
-// CREATE EVENT (Only Organizers)
+// CREATE EVENT
 router.post("/", verifyTokenAndOrganizer, async (req, res) => {
   console.log("--- DEBUG: CREATE EVENT START ---");
   if (!req.user || !req.user.id) {
     return res.status(403).json("User ID missing from token. Please Re-Login.");
   }
-
   try {
     const newEvent = new Event({
       ...req.body,
@@ -50,13 +77,11 @@ router.get("/", async (req, res) => {
       endDate.setDate(endDate.getDate() + 1);
       query.date = { $gte: startDate, $lt: endDate };
     }
-
     const events = await Event.find(query)
       .collation({ locale: 'tr', strength: 2 })
       .limit(limit * 1) 
       .skip((page - 1) * limit) 
       .sort({ date: 1 });
-
     const count = await Event.countDocuments(query);
     res.status(200).json({
       events,
@@ -79,7 +104,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// DELETE EVENT (Organizer only)
+// DELETE EVENT
 router.delete("/:id", verifyTokenAndOrganizer, async (req, res) => {
   try {
     await Event.findByIdAndDelete(req.params.id);
@@ -89,43 +114,33 @@ router.delete("/:id", verifyTokenAndOrganizer, async (req, res) => {
   }
 });
 
-// --- UPDATE EVENT & NOTIFY OWNERS ---
+// UPDATE EVENT & NOTIFY OWNERS
 router.put("/:id", verifyToken, async (req, res) => {
   try {
     if (req.user.role !== "organizer" && req.user.role !== "admin") {
       return res.status(403).json("Only organizers can edit events.");
     }
-
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
       { new: true }
     );
-
     if (!updatedEvent) return res.status(404).json("Event not found.");
-
     const tickets = await Ticket.find({ eventId: req.params.id });
     const userIds = [...new Set(tickets.map((t) => t.userId))];
     const users = await User.find({ _id: { $in: userIds } });
     const emailList = users.map((u) => u.email).filter((email) => email);
-
     if (emailList.length > 0) {
       const connection = await amqp.connect(process.env.RABBIT_URL);
       const channel = await connection.createChannel();
       await channel.assertQueue("event_updates", { durable: true });
-
       const notificationData = {
         eventTitle: updatedEvent.title,
         newDate: new Date(updatedEvent.date).toLocaleDateString(),
         newLocation: updatedEvent.location,
         emails: emailList,
       };
-
-      channel.sendToQueue(
-        "event_updates",
-        Buffer.from(JSON.stringify(notificationData)),
-        { persistent: true }
-      );
+      channel.sendToQueue("event_updates", Buffer.from(JSON.stringify(notificationData)), { persistent: true });
     }
     res.status(200).json(updatedEvent);
   } catch (err) {
