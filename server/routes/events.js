@@ -101,4 +101,57 @@ router.delete("/:id", verifyTokenAndOrganizer, async (req, res) => {
   }
 });
 
+// --- UPDATE EVENT & NOTIFY OWNERS ---
+router.put("/:id", verifyToken, async (req, res) => {
+  try {
+    // 1. Check if user is Organizer or Admin
+    if (req.user.role !== "organizer" && req.user.role !== "admin") {
+      return res.status(403).json("Only organizers can edit events.");
+    }
+
+    // 2. Update the Event info
+    const updatedEvent = await Event.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+
+    if (!updatedEvent) return res.status(404).json("Event not found.");
+
+    // 3. Find all tickets for this event to get the owners
+    const tickets = await Ticket.find({ eventId: req.params.id });
+    const userIds = [...new Set(tickets.map((t) => t.userId))]; // Get unique users
+
+    // 4. Fetch the actual email addresses
+    const users = await User.find({ _id: { $in: userIds } });
+    const emailList = users.map((u) => u.email).filter((email) => email);
+
+    // 5. Send to RabbitMQ Queue 'event_updates'
+    if (emailList.length > 0) {
+      const connection = await amqp.connect(process.env.RABBIT_URL);
+      const channel = await connection.createChannel();
+      await channel.assertQueue("event_updates", { durable: true });
+
+      const notificationData = {
+        eventTitle: updatedEvent.title,
+        newDate: new Date(updatedEvent.date).toLocaleDateString(),
+        newLocation: updatedEvent.location,
+        emails: emailList,
+      };
+
+      channel.sendToQueue(
+        "event_updates",
+        Buffer.from(JSON.stringify(notificationData)),
+        { persistent: true }
+      );
+      console.log(`Queued ${emailList.length} notification emails.`);
+    }
+
+    res.status(200).json(updatedEvent);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err);
+  }
+});
+
 module.exports = router;
